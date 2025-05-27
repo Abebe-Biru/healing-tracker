@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healing & Confidence Tracker</title>
+    <meta name="description" content="Track your 30-day healing and confidence journey.">
+    <meta name="theme-color" content="#6CB670"/> <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"
+            integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+        <h1>Healing & Confidence Tracker 🌿</h1>
+        <p>Your 30-day journey to a stronger you! 💪</p>
+    </header>
+
+    <main>
+        <section id="tracker-section" aria-labelledby="tracker-heading">
+            <h2 id="tracker-heading">📅 30-Day Progress</h2>
+            <div id="calendar-grid">
+                </div>
+        </section>
+
+        <hr class="separator">
+
+        <section id="journal-section" aria-labelledby="journal-heading">
+            <h2 id="journal-heading">✍️ Daily Reflection</h2>
+            <p>Selected Day: <strong id="selected-day-display">None</strong> 😊</p>
+            <textarea id="journal-entry" rows="8" placeholder="How was your day? What did you achieve? What are you grateful for?"></textarea>
+            <button id="save-journal-btn">Save Journal Entry 💾</button>
+            <p id="save-status" role="status"></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Made with ❤️ for your growth. &copy; <span id="current-year"></span></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+    "name": "Healing & Confidence Tracker",
+    "short_name": "HealingTrack",
+    "description": "A 30-day tracker for personal growth, healing, and confidence building.",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#F0FDF4",
+    "theme_color": "#6CB670",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
