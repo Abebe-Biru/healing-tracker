@@ -1,0 +1,11 @@
+{
+  "name": "healing-tracker",
+  "version": "1.0.0",
+  "description": "A 30-day healing and confidence tracker",
+  "scripts": {
+    "generate-icons": "node generate-icons.js"
+  },
+  "dependencies": {
+    "sharp": "^0.32.1"
+  }
+} 

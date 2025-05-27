@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSelectedDay = null;
     let progressData = {}; // { day1: { completed: false }, day2: { completed: true }, ... }
     let journalData = {};  // { day1: "journal text", day2: "another entry", ... }
+    const MAX_JOURNAL_LENGTH = 1000; // Maximum characters for journal entries
+    let isSaving = false; // Flag to prevent multiple simultaneous saves
 
     // --- Initialization ---
     function init() {
@@ -19,9 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCalendar();
         updateCurrentYear();
         registerServiceWorker();
+        updateProgressIndicator();
 
-        // Add event listener for save button
+        // Add event listeners
         saveJournalBtn.addEventListener('click', saveJournal);
+        document.getElementById('reset-progress-btn')?.addEventListener('click', resetProgress);
+        document.getElementById('delete-journal-btn')?.addEventListener('click', () => {
+            if (currentSelectedDay) {
+                deleteJournalEntry(currentSelectedDay);
+            }
+        });
 
         // Initial state for journal
         journalEntryTextarea.disabled = true;
@@ -73,14 +82,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveJournal() {
+        if (isSaving) return;
         if (currentSelectedDay === null) {
             showSaveStatus("Please select a day first! 🙏", true);
             return;
         }
-        const dayKey = `day${currentSelectedDay}`;
-        journalData[dayKey] = journalEntryTextarea.value.trim();
-        localStorage.setItem('healingTrackerJournal', JSON.stringify(journalData));
-        showSaveStatus(`Journal for Day ${currentSelectedDay} saved! ✨`);
+
+        const journalText = journalEntryTextarea.value.trim();
+        if (journalText.length > MAX_JOURNAL_LENGTH) {
+            showSaveStatus(`Journal entry is too long! Maximum ${MAX_JOURNAL_LENGTH} characters allowed.`, true);
+            return;
+        }
+
+        isSaving = true;
+        saveJournalBtn.disabled = true;
+        saveJournalBtn.textContent = "Saving...";
+
+        try {
+            const dayKey = `day${currentSelectedDay}`;
+            journalData[dayKey] = journalText;
+            localStorage.setItem('healingTrackerJournal', JSON.stringify(journalData));
+            showSaveStatus(`Journal for Day ${currentSelectedDay} saved! ✨`);
+        } catch (error) {
+            console.error('Error saving journal:', error);
+            showSaveStatus("Failed to save journal. Please try again.", true);
+        } finally {
+            isSaving = false;
+            saveJournalBtn.disabled = false;
+            saveJournalBtn.textContent = "Save Journal Entry 💾";
+        }
     }
 
     function showSaveStatus(message, isError = false) {
@@ -135,15 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // For this version: selection also marks/unmarks.
             // If you want selection to be separate from marking, this logic would change.
             // For now, clicking a day makes it current AND toggles its completion.
-            if (currentSelectedDay !== null && currentSelectedDay !== dayNumber) {
-                // If a different day was already selected, don't auto-toggle the new one
-                // Let's make it so that first click selects, second click on selected day toggles.
-                // This part is tricky with the combined select/toggle.
-                // Simpler: Click to select. If it's already selected, *then* a click could toggle.
-                // Or, a separate checkbox inside the button.
-                // For now, we will just mark it as selected and load its journal.
-                // The 'completed' class will be toggled separately or on specific user action.
-            }
         }
         // Update current selected day
         currentSelectedDay = dayNumber;
@@ -231,8 +252,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadJournalForDay(dayNumber) {
         const dayKey = `day${dayNumber}`;
-        journalEntryTextarea.value = journalData[dayKey] || '';
+        const journalText = journalData[dayKey] || '';
+        journalEntryTextarea.value = journalText;
+        
+        // Update character count
+        updateCharacterCount(journalText.length);
+        
         selectedDayDisplay.textContent = `Day ${dayNumber} ${progressData[dayKey]?.completed ? '✅' : ''}`;
+    }
+
+    function updateCharacterCount(currentLength) {
+        const remainingChars = MAX_JOURNAL_LENGTH - currentLength;
+        const charCountElement = document.getElementById('char-count');
+        if (charCountElement) {
+            charCountElement.textContent = `${remainingChars} characters remaining`;
+            charCountElement.style.color = remainingChars < 100 ? '#D32F2F' : 'var(--text-color)';
+        }
+    }
+
+    // Add event listener for character count
+    journalEntryTextarea.addEventListener('input', () => {
+        updateCharacterCount(journalEntryTextarea.value.length);
+    });
+
+    // Add delete journal entry functionality
+    function deleteJournalEntry(dayNumber) {
+        if (!confirm(`Are you sure you want to delete the journal entry for Day ${dayNumber}?`)) {
+            return;
+        }
+
+        const dayKey = `day${dayNumber}`;
+        delete journalData[dayKey];
+        localStorage.setItem('healingTrackerJournal', JSON.stringify(journalData));
+        journalEntryTextarea.value = '';
+        updateCharacterCount(0);
+        showSaveStatus(`Journal entry for Day ${dayNumber} deleted.`);
+    }
+
+    // Add reset progress functionality
+    function resetProgress() {
+        if (!confirm('Are you sure you want to reset all progress? This will delete all journal entries and completion status.')) {
+            return;
+        }
+
+        progressData = {};
+        journalData = {};
+        for (let i = 1; i <= NUM_DAYS; i++) {
+            progressData[`day${i}`] = { completed: false };
+        }
+        
+        localStorage.setItem('healingTrackerProgress', JSON.stringify(progressData));
+        localStorage.setItem('healingTrackerJournal', JSON.stringify(journalData));
+        
+        currentSelectedDay = null;
+        journalEntryTextarea.value = '';
+        journalEntryTextarea.disabled = true;
+        saveJournalBtn.disabled = true;
+        selectedDayDisplay.textContent = 'None';
+        updateCharacterCount(0);
+        
+        renderCalendar();
+        showSaveStatus('All progress has been reset.');
+    }
+
+    // Add progress indicator
+    function updateProgressIndicator() {
+        const completedDays = Object.values(progressData).filter(day => day.completed).length;
+        const progressPercentage = (completedDays / NUM_DAYS) * 100;
+        
+        const progressIndicator = document.getElementById('progress-indicator');
+        if (progressIndicator) {
+            progressIndicator.style.width = `${progressPercentage}%`;
+            progressIndicator.setAttribute('aria-valuenow', progressPercentage);
+        }
+        
+        const progressText = document.getElementById('progress-text');
+        if (progressText) {
+            progressText.textContent = `${completedDays}/${NUM_DAYS} days completed`;
+        }
     }
 
     // Start the app
